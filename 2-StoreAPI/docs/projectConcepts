@@ -1,0 +1,92 @@
+# express-async-errors ve populate.js Hakkında Dökümantasyon
+
+## express-async-errors
+
+### Nedir?
+`express-async-errors`, Express.js uygulamalarında asenkron (async/await) fonksiyonlarda oluşan hataların otomatik olarak Express'in hata yakalama (error handling) mekanizmasına iletilmesini sağlayan bir npm paketidir.
+
+### Neden Kullanılır?
+Express'te asenkron route handler'larda oluşan hatalar, otomatik olarak `next()` fonksiyonuna iletilmez. Bu yüzden her async fonksiyonun içinde try-catch bloğu yazmak gerekir. `express-async-errors` paketi, bu ihtiyacı ortadan kaldırır ve kodunuzu daha temiz hale getirir.
+
+### Nasıl Kullanılır?
+1. Paketi yükleyin:
+   ```
+   npm install express-async-errors
+   ```
+2. Projenizin başında (genellikle `app.js` veya `server.js` dosyasında) import edin:
+   ```javascript
+   require('express-async-errors');
+   ```
+3. Artık async fonksiyonlarda oluşan hatalar otomatik olarak Express'in hata yakalayıcısına gider.
+
+### Örnek:
+```javascript
+require('express-async-errors');
+const express = require('express');
+const app = express();
+
+app.get('/', async (req, res) => {
+  throw new Error('Bir hata oluştu!');
+});
+
+// Hata yakalayıcı middleware
+app.use((err, req, res, next) => {
+  res.status(500).json({ msg: err.message });
+});
+```
+
+---
+
+## populate.js
+
+### Nedir?
+`populate`, Mongoose (MongoDB ODM) kütüphanesinde kullanılan bir metottur. Bir koleksiyondaki dökümanın, başka bir koleksiyondaki referans verdiği döküman(lar) ile birlikte getirilmesini sağlar.
+
+### Neden Kullanılır?
+MongoDB'de ilişkisel veri yapısı yoktur, ancak bir dökümanda başka bir koleksiyona referans (ObjectId) tutulabilir. `populate`, bu referansın gerçek veriye dönüştürülmesini sağlar. Böylece ilişkili verileri tek sorguda çekebilirsiniz.
+
+### Nasıl Kullanılır?
+Bir şemada başka bir koleksiyona referans verilir:
+```javascript
+const mongoose = require('mongoose');
+
+const UserSchema = new mongoose.Schema({
+  name: String,
+});
+
+const PostSchema = new mongoose.Schema({
+  title: String,
+  user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+});
+
+const User = mongoose.model('User', UserSchema);
+const Post = mongoose.model('Post', PostSchema);
+```
+
+Bir sorguda populate kullanımı:
+```javascript
+const posts = await Post.find().populate('user');
+// Her post'un user alanı, User koleksiyonundan ilgili kullanıcı dökümanı ile doldurulur.
+```
+
+### populate.js Dosyası
+Projelerde genellikle ilişkili verileri çekmek için özel fonksiyonlar veya middleware'ler yazılır ve bunlar `populate.js` gibi dosyalarda tutulabilir. Bu dosyada, birden fazla alanı veya derin populate işlemlerini yönetmek için yardımcı fonksiyonlar bulunabilir.
+
+### Örnek Kullanım:
+```javascript
+// populate.js
+const populateUser = (query) => query.populate('user', 'name email');
+
+module.exports = { populateUser };
+
+// Controller'da kullanımı:
+const { populateUser } = require('./populate');
+const posts = await populateUser(Post.find());
+```
+
+---
+
+## Özet
+
+- **express-async-errors**: Express'te async fonksiyonlarda hata yönetimini kolaylaştırır.
+- **populate (populate.js)**: Mongoose ile ilişkili koleksiyonlardan verileri kolayca çekmenizi sağlar.
